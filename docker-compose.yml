@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    container_name: glycan-app
+    depends_on:
+      - neo4j
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+
+  neo4j:
+    image: neo4j:5.23
+    container_name: glycan-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    volumes:
+      - neo4j_data:/data
+      - ./docker/neo4j/init.cql:/var/lib/neo4j/import/init.cql
+
+volumes:
+  neo4j_data:

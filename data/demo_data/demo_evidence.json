@@ -1,0 +1,32 @@
+[
+  {
+    "evidence_id": "PMID:1001:abs:0",
+    "doc_id": "PMID:1001",
+    "pmid": "1001",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/1001/",
+    "section": "abstract",
+    "paragraph_id": "0",
+    "text": "L-type monosaccharide L-fucose binds DC-SIGN and activates NF-kB in mouse macrophage, resulting in immune regulation and anti-inflammatory cytokine reduction.",
+    "metadata": {"year": 2020, "species": "mouse"}
+  },
+  {
+    "evidence_id": "PMID:1002:abs:0",
+    "doc_id": "PMID:1002",
+    "pmid": "1002",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/1002/",
+    "section": "abstract",
+    "paragraph_id": "0",
+    "text": "D-type monosaccharide D-glucose weakly modulates MAPK and shows limited anti-inflammatory effects in vitro.",
+    "metadata": {"year": 2019, "species": "human cell line"}
+  },
+  {
+    "evidence_id": "PMID:1003:abs:0",
+    "doc_id": "PMID:1003",
+    "pmid": "1003",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/1003/",
+    "section": "abstract",
+    "paragraph_id": "0",
+    "text": "Sulfated L-type monosaccharide enhances DC-SIGN mediated signaling pathway and supports immune regulation phenotype.",
+    "metadata": {"year": 2021, "species": "mouse"}
+  }
+]
