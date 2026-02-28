@@ -1,0 +1,30 @@
+{
+  "project": {"name": "glycan_immune_kg", "demo_mode": true},
+  "retrieval": {
+    "email": "demo@example.com",
+    "tool": "glycan-immune-kg",
+    "query_terms": ["glycan immunity", "monosaccharide anti-inflammatory"],
+    "max_articles": 5,
+    "use_pubmed_api": true,
+    "allow_open_fulltext": false
+  },
+  "extraction": {"use_spacy": false, "dictionary_path": "data/demo_data/dictionaries.json"},
+  "fusion": {"min_relation_conf": 0.3, "morphology_penalty": 0.2},
+  "knowledge_graph": {
+    "backend": "memory",
+    "neo4j_uri": "bolt://neo4j:7687",
+    "neo4j_user": "neo4j",
+    "neo4j_password": "password"
+  },
+  "reasoning": {
+    "top_k": 5,
+    "max_hops": 4,
+    "beam_width": 6,
+    "hub_penalty": 0.1,
+    "cycle_penalty": 0.2,
+    "morphology_conflict_penalty": 0.25,
+    "irrl_episodes": 50,
+    "irrl_lr": 0.02
+  },
+  "api": {"host": "0.0.0.0", "port": 8000}
+}

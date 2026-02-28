@@ -1,0 +1,12 @@
+{
+  "glycan": ["L-type monosaccharide", "D-type monosaccharide", "L-fucose", "D-glucose"],
+  "receptor": ["DC-SIGN", "TLR4"],
+  "pathway": ["NF-kB", "MAPK"],
+  "phenotype": ["immune regulation", "anti-inflammatory", "cytokine reduction"],
+  "condition": ["mouse macrophage", "in vitro"],
+  "morph_patterns": {
+    "configuration": {"L": ["L-", "L type", "levorotatory"], "D": ["D-", "D type", "dextrorotatory"]},
+    "anomer": {"alpha": ["alpha", "α"], "beta": ["beta", "β"]},
+    "modification": {"sulfated": ["sulfated", "sulfation"], "acetylated": ["acetylated", "acetylation"]}
+  }
+}
