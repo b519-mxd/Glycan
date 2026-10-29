@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Real OA JATS collection. Metadata and checksums only by default; never PDF."""
-import csv, json, re, time, hashlib, urllib.request, urllib.parse, xml.etree.ElementTree as ET
+import csv, json, re, time, hashlib, urllib.request, urllib.parse
+from defusedxml import ElementTree as ET
 from pathlib import Path
 BASE="https://www.ebi.ac.uk/europepmc/webservices/rest"
 QUERIES=[
@@ -17,7 +18,7 @@ def get(url,query=None):
  req=urllib.request.Request(url,headers={"User-Agent":"GlycoPath-Research-Harvester/1.0","Accept":"application/json,application/xml"})
  with urllib.request.urlopen(req,timeout=50) as r:return r.read()
 def jats(blob,pmcid):
- if len(blob)>25000000 or re.search(br'<!DOCTYPE|<!ENTITY',blob,re.I):raise ValueError("Unsafe XML")
+ if len(blob)>25000000:raise ValueError("XML too large")
  root=ET.fromstring(blob)
  ids=[text(e) for e in root.iter() if e.tag.split('}')[-1]=='article-id' and e.attrib.get('pub-id-type') in ('pmc','pmcid')]
  if pmcid not in ['PMC'+str(x).upper().removeprefix('PMC') for x in ids]:raise ValueError("PMCID mismatch")
