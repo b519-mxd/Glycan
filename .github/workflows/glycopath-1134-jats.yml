@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'research/glycopath_harvest/**'
+      - 'tests/test_harvest.py'
       - '.github/workflows/glycopath-1134-jats.yml'
   workflow_dispatch:
 permissions:
@@ -16,29 +17,31 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install secure JATS XML parser
+      - name: Install secure JATS parser
         run: python -m pip install 'defusedxml>=0.7.1,<1'
-      - name: Run collection (real Europe PMC API; no PDF)
+      - name: Verify synthetic parser and strict gate tests
+        run: python -m unittest discover -v -s tests -p test_harvest.py
+      - name: Collect and save redistributable JATS article text (no PDFs)
         id: collect
         shell: bash
         run: |
           set +e
-          python research/glycopath_harvest/collect_open_fulltext.py --target 1134 --output research/glycopath_harvest/results
+          python research/glycopath_harvest/collect_open_fulltext.py --target 1134 --max-candidates 6000 --save-text --output research/glycopath_harvest/results
           result=$?
           echo "collector_exit_code=$result" >> "$GITHUB_OUTPUT"
           exit "$result"
-      - name: Publish results and strict gate
+      - name: Publish dataset, attribution manifest, and audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: glycopath-1134-metadata-and-licensing-audit
+          name: glycopath-1134-permissive-fulltext-and-audit
           path: research/glycopath_harvest/results/
           if-no-files-found: warn
           retention-days: 14
       - name: Status summary
         if: always()
         run: |
-          if [ -e research/glycopath_harvest/results/summary.json ]; then
+          if [ -f research/glycopath_harvest/results/summary.json ]; then
             cat research/glycopath_harvest/results/summary.json >> "$GITHUB_STEP_SUMMARY"
           else
             echo "BLOCKED: No summary produced" >> "$GITHUB_STEP_SUMMARY"
