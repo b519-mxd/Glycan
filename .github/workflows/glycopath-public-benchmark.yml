@@ -1,0 +1,81 @@
+name: GlycoPath public curated benchmark and metadata verification
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'glycopath/research-upgrade-*'
+    paths:
+      - 'glycopath_research/public_benchmarks.py'
+      - 'glycopath_research/structure_graph.py'
+      - 'glycopath_research/metadata_repair.py'
+      - 'tests/test_public_benchmarks.py'
+      - 'tests/test_structure_graph.py'
+      - '.github/workflows/glycopath-public-benchmark.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  structure-and-binding-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU dependencies
+        run: python -m pip install 'numpy>=1.26,<3' 'pandas>=2.2,<3' 'scikit-learn>=1.4,<2' pytest
+      - name: Test supported glycan grammar and validation gates
+        run: PYTHONPATH=. python -m pytest -q tests/test_structure_graph.py tests/test_public_benchmarks.py tests/test_metadata_repair.py tests/test_llm_orchestrator.py
+      - name: Download pinned BojarLab datasets with hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public_data results
+          root='https://raw.githubusercontent.com/BojarLab/glycowork/v1.11.0/glycowork/glycan_data'
+          curl --fail --location --retry 3 --retry-delay 3 --connect-timeout 20 --max-time 180 "$root/glycan_motifs.csv" -o public_data/glycan_motifs.csv
+          curl --fail --location --retry 3 --retry-delay 3 --connect-timeout 20 --max-time 300 "$root/v12_glycan_binding.csv" -o public_data/v12_glycan_binding.csv
+          sha256sum public_data/* | tee results/download_sha256.txt
+          wc -c public_data/*
+      - name: Train three-seed CPU measured-Z-score baselines
+        run: |
+          PYTHONPATH=. python -m glycopath_research.public_benchmarks --motifs public_data/glycan_motifs.csv --binding public_data/v12_glycan_binding.csv --output results | tee results/console_metrics.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glycopath-curated-structure-and-measured-binding
+          path: results/
+          if-no-files-found: warn
+  verify-pmids:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve original archived corpus
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifact
+          gh run download 41441017494 --repo "$GITHUB_REPOSITORY" --name glycopath-1134-permissive-fulltext-and-audit --dir artifact
+          cd artifact && zip -q -r ../archived_corpus.zip .
+      - name: Audit and verify 33 malformed PMIDs
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          from glycopath_research.corpus import audit_archive
+          from glycopath_research.metadata_repair import repair_manifest
+          x=audit_archive('archived_corpus.zip','pmid_results')
+          print('CORPUS_AUDIT',x['status'],x['problem_counts'])
+          y=repair_manifest('pmid_results/repaired_metadata_manifest.jsonl','pmid_results/authority_verified_manifest.jsonl')
+          print('AUTHORITY_REPAIR',json.dumps(y))
+          open('pmid_results/pmid_repair_summary.json','w').write(json.dumps(y,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glycopath-authority-verified-pmid-repair
+          path: pmid_results/
+          if-no-files-found: warn
