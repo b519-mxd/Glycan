@@ -88,7 +88,7 @@ def binding_regression(csv_path,output_dir,seeds=(11,19,42),max_pairs=18000):
         for p in {e[0] for e in train}:
             protein_means[p]=float(np.mean([e[2] for e in train if e[0]==p]))
         predictions={'protein_mean_baseline':np.array([protein_means.get(e[0],global_mean) for e in test])}
-        for mode in ('protein_only','glycan_only','combined'):
+        for mode in ('assay_row_only','glycan_only','combined'):
             hasher=FeatureHasher(n_features=2**15,input_type='dict',alternate_sign=False)
             xx=hasher.transform([features(p,g,mode) for p,g,_ in train])
             xt=hasher.transform([features(p,g,mode) for p,g,_ in test])
