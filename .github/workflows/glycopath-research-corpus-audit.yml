@@ -25,7 +25,7 @@ jobs:
           cd artifact && zip -q -r ../original.zip .
       - name: Verify metadata and every saved SHA256
         run: |
-          python scripts/run_research.py audit --archive original.zip --output audit_output
+          PYTHONPATH=. python scripts/run_research.py audit --archive original.zip --output audit_output
           python -c "import json;d=json.load(open('audit_output/corpus_audit.json'));assert d['counts']['saved']==1134;assert d['status']=='PASS_WITH_METADATA_WARNINGS';print(d['errors'])"
       - uses: actions/upload-artifact@v4
         if: always()
