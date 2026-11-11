@@ -45,7 +45,7 @@ def audit_motifs(csv_path,output_dir):
 def features(protein,glycan,mode):
     result={}
     if mode!='glycan_only': result['protein='+protein]=1
-    if mode!='protein_only':
+    if mode!='assay_row_only':
         for width in (3,4,5):
             for i in range(len(glycan)-width+1):
                 key='glycan'+str(width)+':'+glycan[i:i+width]
@@ -55,7 +55,7 @@ def features(protein,glycan,mode):
 def binding_regression(csv_path,output_dir,seeds=(11,19,42),max_pairs=18000):
     df=pd.read_csv(csv_path,low_memory=False)
     if df.shape[1]<3:raise ValueError('Expected protein by glycan Z-score matrix')
-    protein_key=df.columns[0]
+    # Source metadata columns are heterogeneous; use stable assay-row IDs instead of assuming the first column is a protein identifier.
     cols=[c for c in df.columns[1:] if re.search(r'\([abαβ][1-9][0-9]*-[1-9][0-9]*\)',str(c))]
     if len(cols)<20:raise ValueError('Not enough glycan-structure columns: '+str(len(cols)))
     nums=df[cols].apply(pd.to_numeric,errors='coerce')
@@ -68,7 +68,7 @@ def binding_regression(csv_path,output_dir,seeds=(11,19,42),max_pairs=18000):
         stacked=sub.stack(future_stack=True).dropna()
     examples=[]
     for (ix,col),val in stacked.items():
-        if np.isfinite(val):examples.append((str(df.loc[ix,protein_key]),str(col),float(val)))
+        if np.isfinite(val):examples.append((f'assay_row_{ix}',str(col),float(val)))
     rng=np.random.default_rng(179)
     if len(examples)>max_pairs:
         ids=sorted(rng.choice(len(examples),max_pairs,replace=False))
@@ -118,7 +118,8 @@ def binding_regression(csv_path,output_dir,seeds=(11,19,42),max_pairs=18000):
     result={'benchmark':'CURATED_MEASURED_ZSCORE_REGRESSION','source':SOURCE,
        'raw_shape':list(df.shape),'measured_pairs_used':len(examples),
        'unique_glycans':len({e[1] for e in examples}),
-       'unique_proteins':len({e[0] for e in examples}),
+       'unique_assay_rows':len({e[0] for e in examples}),
+       'row_identity':'Each source matrix row is treated as a distinct assay record; does not assert unique protein accession',
        'target':'Continuous assay Z-score; no binary binding gold',
        'split':'Sequence-disjoint glycan 80/20 by seed; never pair random split',
        'high_z_proxy_definition':'Z>=1.5 is operational high-assay-response, NOT biological binding gold',
