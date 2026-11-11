@@ -68,8 +68,8 @@ jobs:
           from glycopath_research.corpus import audit_archive
           from glycopath_research.metadata_repair import repair_manifest
           x=audit_archive('archived_corpus.zip','pmid_results')
-          print('CORPUS_AUDIT',x['status'],x['problem_counts'])
-          y=repair_manifest('pmid_results/repaired_metadata_manifest.jsonl','pmid_results/authority_verified_manifest.jsonl')
+          print('CORPUS_AUDIT',x['status'],x['errors'])
+          y=repair_manifest('pmid_results/sanitized_manifest.jsonl','pmid_results/authority_verified_manifest.jsonl')
           print('AUTHORITY_REPAIR',json.dumps(y))
           open('pmid_results/pmid_repair_summary.json','w').write(json.dumps(y,indent=2))
           PY
