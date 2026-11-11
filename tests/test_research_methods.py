@@ -11,8 +11,8 @@ def test_conflicting_linkages_are_not_same():
     assert align_candidates(unknown,{"s3":x,"s6":y})["linked_id"] is None
 
 def test_registry_exact():
-    x=GlycanDescription("g",("Gal","GlcNAc"),complete=True)
-    y=GlycanDescription("n",("Gal","GlcNAc"),complete=True)
+    x=GlycanDescription("g",("Gal","GlcNAc"),complete=True,registry_id="VERIFIED:1")
+    y=GlycanDescription("n",("Gal","GlcNAc"),complete=True,registry_id="VERIFIED:1")
     assert compare_structures(x,y)==Identity.EXACT
 
 def test_repeated_source_not_independent():
@@ -37,3 +37,8 @@ def test_path_evidence_and_context_gates():
     b={"provenance":[],"evidence_status":"PREDICTED","context":{"species":"human"}}
     z={p["type"] for p in audit_path([a,b])["issues"]}
     assert {"MISSING_PROVENANCE","NOT_EXPERIMENTAL_OBSERVATION","CONTEXT_MISMATCH"} <= z
+
+def test_unverified_partial_registry_does_not_assert_exact():
+    x=GlycanDescription("partial",("Gal","GlcNAc"),registry_id="REG:PARTIAL")
+    y=GlycanDescription("partial again",("Gal","GlcNAc"),registry_id="REG:PARTIAL")
+    assert compare_structures(x,y)==Identity.COMPATIBLE_NOT_IDENTICAL
