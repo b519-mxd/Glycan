@@ -24,7 +24,7 @@ jobs:
       - run: python -m pip install scikit-learn joblib
       - name: Actually fit three CPU models on document-disjoint weak labels
         run: |
-          python scripts/run_research.py weak-pilot --archive original.zip --output pilot_results
+          PYTHONPATH=. python scripts/run_research.py weak-pilot --archive original.zip --output pilot_results
           python -c "import json;x=json.load(open('pilot_results/weak_pilot_metrics.json'));assert x['scientific_gold_metrics']=='NOT_AVAILABLE';assert len(x['scores'])==3"
       - uses: actions/upload-artifact@v4
         if: always()
