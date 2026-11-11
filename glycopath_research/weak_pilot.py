@@ -3,7 +3,7 @@
 Metrics compare with regex-generated proxy labels, not independently audited gold.
 """
 from __future__ import annotations
-import csv,io,json,random,re,zipfile
+import csv,io,json,random,re,zipfile,hashlib
 from pathlib import Path
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -58,7 +58,7 @@ def pilot(archive, output, seeds=(11,19,42)):
         with (out/f'predictions_seed{seed}.jsonl').open('w') as fh:
             for x,y in zip(test,pred):
                 fh.write(json.dumps({'document':x['document'],'weak_label':x['weak_label'],
-                                     'prediction':y,'text':x['text']},ensure_ascii=False)+'\n')
+                                     'prediction':y,'sentence_sha256':hashlib.sha256(x['text'].encode('utf8')).hexdigest()},ensure_ascii=False)+'\n')
     result={'status':'WEAK_LABEL_PILOT_ONLY','scientific_gold_metrics':'NOT_AVAILABLE',
             'n_examples':len(data),'class_counts':dict(Counter(str(x['weak_label']) for x in data)),
             'scores':all_scores}
