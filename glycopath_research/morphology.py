@@ -2,6 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
+from collections import Counter
 import re
 
 class Identity(str, Enum):
@@ -38,11 +39,9 @@ def parse_single_linkage(text: str) -> GlycanDescription:
     return GlycanDescription(text, (left, right), (link,), False)
 
 def compare_structures(a: GlycanDescription, b: GlycanDescription) -> Identity:
-    if a.registry_id and a.registry_id == b.registry_id:
-        return Identity.EXACT
     if not a.residues or not b.residues:
         return Identity.UNKNOWN
-    if a.complete and b.complete and sorted(a.residues) != sorted(b.residues):
+    if a.complete and b.complete and Counter(a.residues) != Counter(b.residues):
         return Identity.CONFLICT
     for x in a.linkages:
         for y in b.linkages:
@@ -52,7 +51,8 @@ def compare_structures(a: GlycanDescription, b: GlycanDescription) -> Identity:
                 vx, vy = getattr(x, prop), getattr(y, prop)
                 if vx is not None and vy is not None and vx != vy:
                     return Identity.CONFLICT
-    if a.complete and b.complete and a.residues == b.residues and a.linkages == b.linkages:
+    # Exact identity must be confirmed by the same externally verified fully specified accession.
+    if a.complete and b.complete and a.registry_id and a.registry_id == b.registry_id:
         return Identity.EXACT
     if set(a.residues).issubset(set(b.residues)) or set(b.residues).issubset(set(a.residues)):
         return Identity.COMPATIBLE_NOT_IDENTICAL
