@@ -8,6 +8,7 @@ on:
       - 'glycopath_research/public_benchmarks.py'
       - 'glycopath_research/structure_graph.py'
       - 'glycopath_research/metadata_repair.py'
+      - 'tests/test_metadata_repair.py'
       - 'tests/test_public_benchmarks.py'
       - 'tests/test_structure_graph.py'
       - '.github/workflows/glycopath-public-benchmark.yml'
