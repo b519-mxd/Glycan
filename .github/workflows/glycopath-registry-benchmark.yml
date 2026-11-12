@@ -1,0 +1,35 @@
+name: GlycoPath registry alignment benchmark
+on:
+  push:
+    branches: ['glycopath/research-upgrade-20261111']
+    paths: ['glycopath_research/registry_benchmark.py','.github/workflows/glycopath-registry-benchmark.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          mkdir -p cosmos registry_output
+          curl --fail --retry 2 --max-time 180 -L https://download.glycosmos.org/glycosmos_glycans_list.csv -o cosmos/glycans.csv
+          python -m glycopath_research.registry_benchmark
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glycopath-registry-alignment
+          path: registry_output
+  source-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git archive --format=zip --output=GlycoPath_Final_Research_Code.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-code-snapshot
+          path: GlycoPath_Final_Research_Code.zip
