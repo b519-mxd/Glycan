@@ -1,0 +1,27 @@
+name: GlycoPath condition aware measured evidence
+on:
+  push:
+    branches: ['glycopath/research-upgrade-20261111']
+    paths: ['glycopath_research/measured_evidence.py','.github/workflows/glycopath-measured-evidence.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  measured:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pandas numpy
+      - run: |
+          mkdir -p cosmos evidence_output
+          curl --fail --retry 2 --max-time 120 -L https://download.glycosmos.org/glycosmos_lectins_carbogrove_list.csv -o cosmos/carbogrove.csv
+          python -m glycopath_research.measured_evidence
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glycopath-measured-evidence
+          path: evidence_output
