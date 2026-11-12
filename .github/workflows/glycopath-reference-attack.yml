@@ -1,0 +1,50 @@
+name: GlycoPath curated reference attack
+on:
+  push:
+    branches: ['glycopath/research-upgrade-20261111']
+    paths: ['glycopath_research/reference_attack.py', 'glycopath_research/qwen_reference_train.py', '.github/workflows/glycopath-reference-attack.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install numpy scikit-learn joblib
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: |
+          mkdir -p external reference_output
+          curl --fail --retry 3 -L https://raw.githubusercontent.com/BojarLab/glycowork/v1.11.0/glycowork/glycan_data/lectin_specificity.json -o external/lectin.json
+          curl --fail --retry 3 -L https://raw.githubusercontent.com/BojarLab/glycowork/v1.11.0/glycowork/glycan_data/glycan_motifs.csv -o external/motifs.csv
+          python -m glycopath_research.reference_attack external/lectin.json external/motifs.csv reference_output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reference-attack-results
+          path: reference_output
+  qwen-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install 'transformers==4.51.3' 'peft==0.15.2' 'huggingface_hub<1'
+      - run: |
+          mkdir -p external
+          curl --fail --retry 3 -L https://raw.githubusercontent.com/BojarLab/glycowork/v1.11.0/glycowork/glycan_data/glycan_motifs.csv -o external/motifs.csv
+          python -m glycopath_research.qwen_reference_train
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qwen-reference-cpu
+          path: qwen_output
