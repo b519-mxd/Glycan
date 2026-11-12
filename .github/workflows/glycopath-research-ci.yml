@@ -1,0 +1,23 @@
+name: GlycoPath structural and provenance method checks
+on:
+  push:
+    branches:
+      - 'glycopath/research-upgrade-*'
+  pull_request:
+    paths:
+      - 'glycopath_research/**'
+      - 'tests/test_research_methods.py'
+      - '.github/workflows/glycopath-research-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  algorithm_checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest requests pyyaml networkx
+      - run: PYTHONPATH=. python -m pytest -q tests/test_pipeline.py tests/test_research_methods.py tests/test_research_supervisor.py tests/test_toy_irrl.py

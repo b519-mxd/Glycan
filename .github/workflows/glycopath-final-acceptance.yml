@@ -1,0 +1,35 @@
+name: GlycoPath final result verification
+on:
+  push:
+    branches: ['glycopath/research-upgrade-20261111']
+    paths: ['glycopath_research/final_acceptance.py','.github/workflows/glycopath-final-acceptance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p verification final_output
+          gh run download 43137518965 --name reference-attack-results --dir verification/reference
+          gh run download 43137518965 --name qwen-reference-cpu --dir verification/qwen_reference
+          gh run download 43137870637 --name qwen-literature-weak-and-bc5cdr --dir verification/qwen_literature
+          gh run download 43137981112 --name glycocosmos-pathway-graph --dir verification/glycosmos
+          gh run download 43138024977 --name glycopath-registry-alignment --dir verification/registry
+          gh run download 43138229020 --name glycopath-measured-evidence --dir verification/measured
+          python -m glycopath_research.final_acceptance
+          git archive --format=zip --output=final_output/GlycoPath_Final_Research_Code.zip HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glycopath-final-verification
+          path: final_output

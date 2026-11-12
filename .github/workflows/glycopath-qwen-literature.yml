@@ -1,0 +1,34 @@
+name: GlycoPath real literature Qwen transfer pilot
+on:
+  push:
+    branches: ['glycopath/research-upgrade-20261111']
+    paths: ['glycopath_research/qwen_literature_train.py','.github/workflows/glycopath-qwen-literature.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  qwen-literature:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install 'transformers==4.51.3' 'peft==0.15.2' 'huggingface_hub<1'
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p original_artifact external text_output
+          gh run download 41441017494 --repo "$GITHUB_REPOSITORY" --name glycopath-1134-permissive-fulltext-and-audit --dir original_artifact
+          for x in train valid test; do curl --fail --retry 3 -L "https://huggingface.co/datasets/tner/bc5cdr/resolve/main/dataset/$x.json" -o "external/$x.json"; done
+          sha256sum external/*.json > text_output/public_source_hashes.txt
+          python -m glycopath_research.qwen_literature_train
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qwen-literature-weak-and-bc5cdr
+          path: text_output

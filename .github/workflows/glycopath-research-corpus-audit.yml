@@ -1,0 +1,35 @@
+name: GlycoPath verify JATS corpus (no gold labels)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['glycopath/research-upgrade-*']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch preserved third-round archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifact
+          gh run download 41441017494 --repo "$GITHUB_REPOSITORY" --name glycopath-1134-permissive-fulltext-and-audit --dir artifact
+          test -f artifact/records.csv
+          test -d artifact/text
+          cd artifact && zip -q -r ../original.zip .
+      - name: Verify metadata and every saved SHA256
+        run: |
+          PYTHONPATH=. python scripts/run_research.py audit --archive original.zip --output audit_output
+          python -c "import json;d=json.load(open('audit_output/corpus_audit.json'));assert d['counts']['saved']==1134;assert d['status']=='PASS_WITH_METADATA_WARNINGS';print(d['errors'])"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glycopath-1134-re-audit
+          path: audit_output/
+          if-no-files-found: warn
