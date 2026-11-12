@@ -1,0 +1,32 @@
+name: GlycoPath GlyCosmos real pathway graph
+on:
+  push:
+    branches: ['glycopath/research-upgrade-20261111']
+    paths: ['glycopath_research/glycosmos_graph.py','.github/workflows/glycopath-glycosmos-graph.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install numpy scikit-learn
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: |
+          mkdir -p cosmos glycosmos_output
+          curl --fail --retry 2 --max-time 90 -L https://download.glycosmos.org/glycosmos_glycans_glycoprotein_list.csv -o cosmos/glycan_protein.csv
+          curl --fail --retry 2 --max-time 90 -L https://download.glycosmos.org/glycosmos_pathways_glycoprotein_list.csv -o cosmos/protein_pathway.csv
+          curl --fail --retry 2 --max-time 90 -L https://download.glycosmos.org/glycosmos_pathways_glycan_list.csv -o cosmos/glycan_pathway.csv
+          sha256sum cosmos/*.csv > glycosmos_output/source_hashes.txt
+          python -m glycopath_research.glycosmos_graph
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glycocosmos-pathway-graph
+          path: glycosmos_output
