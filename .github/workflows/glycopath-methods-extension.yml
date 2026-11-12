@@ -1,0 +1,22 @@
+name: GlycoPath Methods extension controlled checks
+on:
+  push:
+    branches: ['glycopath/methods-extension-20261112']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controlled:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          mkdir -p methods_extension_output
+          PYTHONPATH=. python tests/test_methods_extension.py | tee methods_extension_output/extension_test_result.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: methods-extension-controlled
+          path: methods_extension_output
