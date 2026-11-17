@@ -35,10 +35,13 @@ or multi-agent superiority experiment.**
 |---|---:|---:|---:|---:|
 | No reprocessing | 50/80 | 50/80 | 50/80 | 0 |
 | Quality-event-driven selective refresh | 80/80 | 80/80 | 80/80 | 90 |
+| Fixed pipeline with dependency cache | 80/80 | 80/80 | 80/80 | 90 |
 | Fixed full rerun | 80/80 | 80/80 | 80/80 | 240 |
 
-Relative to a *non-cached full rerun*, selective refresh uses 62.5% fewer
-handler calls, with equivalent limited-accession matching results.
+Relative to a *non-cached full rerun*, both selective refresh and a cached
+fixed pipeline use 62.5% fewer handler calls, with identical registry results.
+Therefore, this experiment isolates the benefit of incremental computation,
+NOT a multi-agent coordination gain.
 
 Curated records: 198/200 recover a DOI citation and signed label, 2/200 have
 `source=unknown` and remain REVIEW, 20/20 negative records remain negative.
