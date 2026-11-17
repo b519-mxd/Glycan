@@ -11,7 +11,7 @@ from copy import deepcopy
 from pathlib import Path
 from glycopath_research.real_reference_adapter import (
     RegistryReference,CuratedLectinReference,
-    build_registry_state,build_curated_state,run_feedback)
+    build_registry_state,build_curated_state,run_feedback,routes_and_agents)
 
 
 def pairs_from_registry(rows):
@@ -40,6 +40,26 @@ def correct(state,gold):
     return out
 
 
+def cached_fixed_pipeline(state, registry, lectins):
+    """A fixed entity/relation/path workflow with the same dependency cache.
+    This non-LLM baseline uses exactly the same registered tools.
+    """
+    routes, agents = routes_and_agents(registry, lectins)
+    calls = 0
+    for kind, agent_name in [('entity','registry_resolve'),
+                             ('relation','relation_refresh'),
+                             ('path','trace_refresh')]:
+        for aid in sorted(state.artifacts):
+            obj = state.artifacts[aid]
+            if obj.kind != kind or state.gate(aid).state == 'PASS':
+                continue
+            result = agents[agent_name](obj, state.snapshot(), state.gate(aid))
+            calls += 1
+            if result is not None:
+                state.put(aid, obj.kind, result.payload, obj.parents)
+    return calls
+
+
 def evaluate(registry_rows,lectin_rows,n=80,changed=30):
     pairs=pairs_from_registry(registry_rows)
     if not 0<changed<=n<=len(pairs):
@@ -61,6 +81,7 @@ def evaluate(registry_rows,lectin_rows,n=80,changed=30):
         x.pop('supported_signature',None)
         live.put(key,'entity',x)
     skipped=correct(live,acc)
+    cached=deepcopy(live)
     t=time.perf_counter()
     dynamic=run_feedback(live,registry,lectins,3*n)
     dynamic_secs=time.perf_counter()-t
@@ -68,8 +89,13 @@ def evaluate(registry_rows,lectin_rows,n=80,changed=30):
     t=time.perf_counter()
     static=run_feedback(full,registry,lectins,3*n)
     static_secs=time.perf_counter()-t
+    t=time.perf_counter()
+    cached_calls=cached_fixed_pipeline(cached,registry,lectins)
+    cached_secs=time.perf_counter()-t
+    final_cached=correct(cached,acc)
     final1=correct(live,acc);final2=correct(full,acc)
-    assert final1==final2
+    assert final1==final2==final_cached
+    assert cached_calls==3*changed
     assert final1['correct_registry_links']==n
     assert dynamic['used_budget']==3*changed and static['used_budget']==3*n
 
@@ -87,13 +113,15 @@ def evaluate(registry_rows,lectin_rows,n=80,changed=30):
         'no_reprocessing':skipped,
         'selective_feedback':dict(final1,calls=len(dynamic['audit_log']),
                               seconds=round(dynamic_secs,5)),
+        'fixed_cached_rerun':dict(final_cached,calls=cached_calls,
+                              seconds=round(cached_secs,5)),
         'fixed_full_rerun':dict(final2,calls=len(static['audit_log']),
                               seconds=round(static_secs,5)),
         'call_reduction_vs_full_rerun':1-len(dynamic['audit_log'])/len(static['audit_log'])},
       'curated_bibliographic_evidence':{
           'source_and_polarity_pass':passes,'unresolved_record_ids':unknown,
           'negative_records_retained':negative,'calls':len(cite['audit_log'])},
-      'disclaimer':'A well-engineered incremental single agent or cached fixed pipeline could match this result; no evidence of autonomous LLM coordination or scientific discovery quality gain.'}
+      'disclaimer':'An actual dependency-cached fixed pipeline matched selective feedback: same identity results and same call count. No evidence of autonomous LLM coordination or scientific discovery quality gain.'}
 
 
 if __name__=='__main__':
