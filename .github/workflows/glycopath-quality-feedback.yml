@@ -1,0 +1,25 @@
+name: GlycoPath quality-feedback coordination checks
+
+on:
+  push:
+    branches:
+      - glycopath/quality-feedback-agents-20261117
+  pull_request:
+    paths:
+      - glycopath_research/quality_feedback.py
+      - tests/test_quality_feedback.py
+      - .github/workflows/glycopath-quality-feedback.yml
+  workflow_dispatch:
+
+jobs:
+  controlled-software-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run controlled quality-feedback checks
+        run: python -m unittest discover -s tests -p test_quality_feedback.py -v
