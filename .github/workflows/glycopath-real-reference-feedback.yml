@@ -1,0 +1,29 @@
+name: GlycoPath real-reference feedback smoke checks
+
+on:
+  push:
+    branches:
+      - glycopath/real-reference-feedback-20261117
+  pull_request:
+    paths:
+      - glycopath_research/real_reference_adapter.py
+      - glycopath_research/quality_feedback.py
+      - benchmark_real_reference_feedback.py
+      - tests/test_real_reference_feedback_smoke.py
+      - .github/workflows/glycopath-real-reference-feedback.yml
+  workflow_dispatch:
+
+jobs:
+  real-reference-smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify baseline quality feedback control logic
+        run: python -m unittest discover -s tests -p test_quality_feedback.py -v
+      - name: Verify strict real-reference adapter on pinned examples
+        run: python -m unittest discover -s tests -p test_real_reference_feedback_smoke.py -v
